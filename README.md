@@ -1,15 +1,12 @@
 # discord-website-vertify
 
-To install dependencies:
+This is a simple website verifier for discord.
 
-```bash
-bun install
-```
+You need to have docker installed to run this.
 
 To run:
 
 ```bash
-bun run index.ts
+docker build -t bun-app .
+docker run -p 3000:3000 bun-app
 ```
-
-This project was created using `bun init` in bun v1.2.21. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
