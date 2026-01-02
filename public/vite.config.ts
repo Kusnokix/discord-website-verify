@@ -13,4 +13,11 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    HCAPTCHA_SITE_KEY: JSON.stringify(process.env.HCAPTCHA_SITE_KEY || ""),
+  }
 })
+
+declare global {
+  const HCAPTCHA_SITE_KEY: string
+}

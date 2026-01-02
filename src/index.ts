@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   Client,
+  Collection,
   Events,
   GatewayIntentBits,
   InteractionContextType,
@@ -17,7 +18,6 @@ import { z } from "zod";
 import { Elysia, file, status } from "elysia";
 import { staticPlugin } from "@elysiajs/static";
 import { verify } from "hcaptcha"
-import { server } from "typescript";
 export const propsSechma = z.object({
   vistitorId: z.string(),
   _fingerprintVersion: z.string().or(z.number()),
@@ -65,7 +65,21 @@ const client = new Client({
   ],
 });
 
-const redis = new RedisClient(process.env.REDIS_URL!);
+const cache = new Collection<string, string>()
+const cacheExpired = new Collection<string, {
+  createdAt: number,
+  expiredAt: number
+}>()
+
+setInterval(() => {
+  cacheExpired.forEach((value, key) => {
+    if (value.expiredAt < (Date.now() / 1000)) {
+      cache.delete(key)
+      cacheExpired.delete(key)
+    }
+  })
+}, 1000)
+
 const app = new Elysia()
   .use(
     staticPlugin({
@@ -133,18 +147,17 @@ const app = new Elysia()
     const resultVerify = await verify(process.env.HCAPTCHA_SECRET_KEY!, resultBody.token, ip.address, process.env.HCAPTCHA_SITE_KEY!)
     if (!resultVerify.success) return status(401, { message: "不正なリクエストです。" })
     const guild = await client.guilds.fetch(process.env.GUILD_ID!)
-    console.log(guild)
     if (!guild) return status(401, { message: "不正なリクエストです。" })
     const member = await guild.members.fetch(code.userId)
-    console.log(member)
     if (!member) return status(401, { message: "不正なリクエストです。" })
     await member.roles.add(process.env.ROLE_ID!)
-    await redis.del(_2)
+    cache.delete(_2)
+    cacheExpired.delete(_2)
     return {
       success: true,
       message: "ベリフィケーションが完了しました。"
     }
-  });
+  }).head("/heartbeat", () => status(204));
 
 const commands = [
   new SlashCommandBuilder()
@@ -204,7 +217,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 async function getVerificationCode(userId: string): Promise<z.infer<typeof VerificationCodeSchema> | null> {
-  const code = await redis.get(userId);
+  const code = cache.get(userId);
   if (!code) return null;
   return JSON.parse(code);
 }
@@ -212,7 +225,7 @@ async function getVerificationCode(userId: string): Promise<z.infer<typeof Verif
 async function getOrCreateVerificationCode(
   userId: string
 ): Promise<z.infer<typeof VerificationCodeSchema>> {
-  const code = await redis.get(userId);
+  const code = cache.get(userId);
   if (!code) {
     const metadata = {
       payloadVersionType: 1,
@@ -220,8 +233,8 @@ async function getOrCreateVerificationCode(
       payloadVersionSeed: Math.floor(Math.random() * 1000000),
       tokenKey: crypto.getRandomValues(new Uint8Array(32)).toBase64(),
     } as z.infer<typeof VerificationMetadataSchema>;
-    const newCode = crypto.getRandomValues(new Uint8Array(32)).toBase64();
-    await redis.set(
+    const newCode = crypto.getRandomValues(new Uint8Array(32)).toHex();
+    cache.set(
       userId,
       JSON.stringify({
         code: newCode,
@@ -229,7 +242,10 @@ async function getOrCreateVerificationCode(
         metadata: metadata,
       })
     );
-    await redis.expire(userId, 600);
+    cacheExpired.set(userId, {
+      createdAt: Date.now() / 1000,
+      expiredAt: (Date.now() / 1000) + 600,
+    })
     return {
       code: newCode,
       userId: userId,

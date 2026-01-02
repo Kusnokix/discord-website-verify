@@ -28,6 +28,7 @@ declare global {
   interface Window {
     hcaptchaSiteKey: string;
   }
+  var HCAPTCHA_SITE_KEY: string;
 }
 function toBase64(uint8: Uint8Array): string {
   return btoa(String.fromCharCode(...uint8));
@@ -109,7 +110,7 @@ function App() {
         _0: body,
         _1: metadata.metadata,
         _2: metadata.userId,
-        _3: window.hcaptchaSiteKey || "HCAPTCHA-SITEKEY-HERE",
+        _3: HCAPTCHA_SITE_KEY,
       }),
     })
       .then((res) => res.json())
@@ -144,7 +145,7 @@ function App() {
       >
         <div className="flex flex-col items-center gap-6 px-4">
           <HCaptcha
-            sitekey={window.hcaptchaSiteKey || "HCAPTCHA-SITEKEY-HERE"}
+            sitekey={HCAPTCHA_SITE_KEY}
             onVerify={(token, ekey) => handleVerificationSuccess(token, ekey)}
             onExpire={() =>
               toast.error(
