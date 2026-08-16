@@ -3,9 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 
-// https://vite.dev/config/
-console.log("HCAPTCHA_SITE_KEY", process.env.HCAPTCHA_SITE_KEY);
-
 
 export default defineConfig({
   plugins: [

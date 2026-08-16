@@ -131,7 +131,7 @@ function App() {
     }
   };
   return (
-    <div className="yuji-boku-regular antialiased">
+    <div className="ibm-plex-thai antialiased">
       <div
         className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-300 ${
           isDark ? "bg-[#1f1e1e] text-white" : "bg-white text-[#0a0a0a]"
