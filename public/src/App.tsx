@@ -24,12 +24,6 @@ const VerificationMetadataSchema = z.object({
   userId: z.string(),
 });
 
-declare global {
-  interface Window {
-    hcaptchaSiteKey: string;
-  }
-  var HCAPTCHA_SITE_KEY: string;
-}
 function toBase64(uint8: Uint8Array): string {
   return btoa(String.fromCharCode(...uint8));
 }
@@ -46,7 +40,7 @@ function App() {
     document.querySelector("#root")?.classList.toggle("dark", isDark);
   }, [isDark]);
   const handleVerificationSuccess = async (token: string, ekey: string) => {
-    toast.info("処理中です。少々お待ちください。");
+    toast.info("กำลังดำเนินการ กรุณารอสักครู่");
     const fpPromise = await FingerprintJS.load();
     const url = new URL(window.location.href);
     const code = url.searchParams.get("c");
@@ -54,7 +48,7 @@ function App() {
     if (!code || !metadataRaw) {
       setTimeout(() => window.location.reload(), 5e3);
       return toast.error(
-        "不正なリクエストです。5秒後に自動的にリロードされます。",
+        "คำขอไม่ถูกต้อง หน้าเว็บจะรีโหลดอัตโนมัติใน 5 วินาที",
         {
           duration: 5e3,
         }
@@ -67,7 +61,7 @@ function App() {
       );
     } catch (error) {
       console.error(error);
-      toast.error("不正なリクエストです。5秒後に自動的にリロードされます。", {
+      toast.error("คำขอไม่ถูกต้อง หน้าเว็บจะรีโหลดอัตโนมัติใน 5 วินาที", {
         duration: 5e3,
       });
       setTimeout(() => window.location.reload(), 5e3);
@@ -120,13 +114,13 @@ function App() {
         };
       });
     if (result.success) {
-      toast.success("認証に成功しました。5秒後に自動的に閉じられます。", {
+      toast.success("ยืนยันตัวตนสำเร็จ หน้าต่างนี้จะปิดอัตโนมัติใน 5 วินาที", {
         duration: 5e3,
       });
       setTimeout(window.close, 5e3);
     } else {
       toast.error(
-        `認証に失敗しました。5秒後に自動的にリロードされます。 ${
+        `ยืนยันตัวตนไม่สำเร็จ หน้าเว็บจะรีโหลดอัตโนมัติใน 5 วินาที ${
           result.message ? `(${result.message})` : ""
         }`,
         {
@@ -149,13 +143,13 @@ function App() {
             onVerify={(token, ekey) => handleVerificationSuccess(token, ekey)}
             onExpire={() =>
               toast.error(
-                "認証に失敗しました。5秒後に自動的にリロードされます。",
+                "ยืนยันตัวตนไม่สำเร็จ หน้าเว็บจะรีโหลดอัตโนมัติใน 5 วินาที",
                 { duration: 5e3 }
               )
             }
             theme={isDark ? "dark" : "light"}
             size="normal"
-            languageOverride="ja"
+            languageOverride="th"
           />
 
           <p
@@ -163,25 +157,25 @@ function App() {
               isDark ? "text-gray-400" : "text-gray-600"
             }`}
           >
-            このサイトは hCaptcha によって保護されており、
+            เว็บไซต์นี้ได้รับการปกป้องโดย hCaptcha และอยู่ภายใต้
             <a
               href="https://www.hcaptcha.com/privacy"
               className="underline hover:opacity-70 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
-              プライバシーポリシー
+              นโยบายความเป็นส่วนตัว
             </a>
-            および
+            และ
             <a
               href="https://www.hcaptcha.com/terms"
               className="underline hover:opacity-70 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
-              利用規約
+              ข้อกำหนดการใช้งาน
             </a>
-            が適用されます。
+            ของ hCaptcha
           </p>
         </div>
       </div>

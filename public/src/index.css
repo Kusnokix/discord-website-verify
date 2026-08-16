@@ -127,3 +127,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* sonner ships rich background colors for success/info/warning/error out of
+   the box (via the `richColors` prop); loading has no built-in variant, so
+   define one here following the same [data-type] convention. */
+[data-sonner-toaster][data-sonner-theme="light"] {
+  --loading-bg: hsl(255, 100%, 97%);
+  --loading-border: hsl(255, 91%, 92%);
+  --loading-text: hsl(255, 60%, 50%);
+}
+
+[data-sonner-toaster][data-sonner-theme="dark"] {
+  --loading-bg: hsl(255, 60%, 8%);
+  --loading-border: hsl(255, 40%, 18%);
+  --loading-text: hsl(255, 90%, 75%);
+}
+
+[data-rich-colors="true"][data-sonner-toast][data-type="loading"] {
+  background: var(--loading-bg);
+  border-color: var(--loading-border);
+  color: var(--loading-text);
+}

@@ -13,27 +13,10 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import "dotenv/config";
-import { RedisClient } from "bun";
 import { z } from "zod";
 import { Elysia, file, status } from "elysia";
 import { staticPlugin } from "@elysiajs/static";
 import { verify } from "hcaptcha"
-export const propsSechma = z.object({
-  vistitorId: z.string(),
-  _fingerprintVersion: z.string().or(z.number()),
-  _fingerprintConfident: z.number(),
-
-  driver: z.boolean().nullable().optional(),  // navigator.webdriver can be undefined
-  buildId: z.string().optional().nullable(),
-
-  os: z.string(),
-  userAgent: z.string(),
-  appVersion: z.string(),
-
-  _b: z.boolean(), // "brave" in navigator
-  _bv: z.string().nullable() // navigator.buildID or null
-});
-
 
 export const VerificationMetadataSchema = z.object({
   payloadVersionType: z.union([z.literal(1), z.literal(2)]),
@@ -101,7 +84,7 @@ const app = new Elysia()
       _3: z.string(),
     })
     const data = baseBody.safeParse(body)
-    if (!data.success) return status(401, { message: "不正なリクエストです。" })
+    if (!data.success) return status(401, { message: "คำขอไม่ถูกต้อง" })
     const { _0, _1, _2, _3 } = data.data
     const resultBodySchema = z.object({
       token: z.string(),
@@ -111,8 +94,8 @@ const app = new Elysia()
     })
     let resultBody: z.infer<typeof resultBodySchema> | null = null
     const code = await getVerificationCode(_2)
-    if (!code) return status(401, { message: "不正なリクエストです。" })
-    if (_1.payloadVersionType !== code.metadata.payloadVersionType || _1.payloadVersion !== code.metadata.payloadVersion || _1.payloadVersionSeed !== code.metadata.payloadVersionSeed || _1.tokenKey !== code.metadata.tokenKey) return status(401, { message: "不正なリクエストです。" })
+    if (!code) return status(401, { message: "คำขอไม่ถูกต้อง" })
+    if (_1.payloadVersionType !== code.metadata.payloadVersionType || _1.payloadVersion !== code.metadata.payloadVersion || _1.payloadVersionSeed !== code.metadata.payloadVersionSeed || _1.tokenKey !== code.metadata.tokenKey) return status(401, { message: "คำขอไม่ถูกต้อง" })
     if (_1.payloadVersionType === 1) {
       const cryptoKey = await crypto.subtle.importKey(
         "raw",
@@ -136,26 +119,26 @@ const app = new Elysia()
       );
       const decryptedString = new TextDecoder().decode(decrypted);
       const r = resultBodySchema.safeParse(JSON.parse(decryptedString))
-      if (!r.success) return status(401, { message: "不正なリクエストです。" })
+      if (!r.success) return status(401, { message: "คำขอไม่ถูกต้อง" })
       resultBody = r.data
     }
-    if (!resultBody) return status(401, { message: "不正なリクエストです。" })
-    if (code.code.replaceAll(" ", "+") != resultBody.code.replaceAll(" ", "+")) return status(401, { message: "不正なリクエストです。" })
-    if (resultBody.confident < 0.5) return status(401, { message: "不正なリクエストです。" })
+    if (!resultBody) return status(401, { message: "คำขอไม่ถูกต้อง" })
+    if (code.code.replaceAll(" ", "+") != resultBody.code.replaceAll(" ", "+")) return status(401, { message: "คำขอไม่ถูกต้อง" })
+    if (resultBody.confident < 0.5) return status(401, { message: "คำขอไม่ถูกต้อง" })
     const ip = server?.requestIP(request)
-    if (!ip) return status(401, { message: "不正なリクエストです。" })
+    if (!ip) return status(401, { message: "คำขอไม่ถูกต้อง" })
     const resultVerify = await verify(process.env.HCAPTCHA_SECRET_KEY!, resultBody.token, ip.address, process.env.HCAPTCHA_SITE_KEY!)
-    if (!resultVerify.success) return status(401, { message: "不正なリクエストです。" })
+    if (!resultVerify.success) return status(401, { message: "คำขอไม่ถูกต้อง" })
     const guild = await client.guilds.fetch(process.env.GUILD_ID!)
-    if (!guild) return status(401, { message: "不正なリクエストです。" })
+    if (!guild) return status(401, { message: "คำขอไม่ถูกต้อง" })
     const member = await guild.members.fetch(code.userId)
-    if (!member) return status(401, { message: "不正なリクエストです。" })
+    if (!member) return status(401, { message: "คำขอไม่ถูกต้อง" })
     await member.roles.add(process.env.ROLE_ID!)
     cache.delete(_2)
     cacheExpired.delete(_2)
     return {
       success: true,
-      message: "ベリフィケーションが完了しました。"
+      message: "ยืนยันตัวตนสำเร็จ"
     }
   }).head("/heartbeat", () => status(204));
 
@@ -186,19 +169,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
       embeds: [
         {
           description:
-            "```\n下のボタンをクリックして、ベリフィケーションを行ってください。\n```",
+            "```\nกรุณาคลิกปุ่มด้านล่างเพื่อทำการยืนยันตัวตน\n```",
           color: 3311075,
           fields: [],
           author: {
             icon_url:
               "https://cdn.discordapp.com/avatars/1456313944191795263/200f830908f4fba171b9d089c47f974e.webp?size=128",
-            name: "ベリフィケーションが必要です",
+            name: "จำเป็นต้องยืนยันตัวตน",
           },
           image: {
             url: "https://i.pinimg.com/originals/ca/0f/0e/ca0f0ed42f907be80e8fd356400a9c96.gif",
           },
           footer: {
-            text: "ベリフィケーションのため、Discord 外のサイトに移動します。",
+            text: "คุณจะถูกนำไปยังเว็บไซต์ภายนอก Discord เพื่อทำการยืนยันตัวตน",
           },
           timestamp: new Date().toISOString(),
         },
@@ -207,7 +190,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("verify")
-            .setLabel("ベリファイ")
+            .setLabel("ยืนยันตัวตน")
             .setStyle(ButtonStyle.Primary)
             .setEmoji("🔒")
         ),
@@ -264,19 +247,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
       embeds: [
         {
           description:
-            "```\n下の「ベリフィケーション」ボタンを押して、ウェブサイトを開いてください。\n※ ベリフィケーションは 10分以内 に行ってください。\n```",
+            "```\nกรุณากดปุ่ม \"ยืนยันตัวตน\" ด้านล่างเพื่อเปิดเว็บไซต์\n※ กรุณาทำการยืนยันตัวตนภายใน 10 นาที\n```",
           color: 3311075,
           fields: [],
           author: {
             icon_url:
               "https://cdn.discordapp.com/avatars/1456313944191795263/200f830908f4fba171b9d089c47f974e.webp?size=128",
-            name: "下の案内に従ってください",
+            name: "กรุณาทำตามคำแนะนำด้านล่าง",
           },
           image: {
             url: "https://i.pinimg.com/originals/ca/0f/0e/ca0f0ed42f907be80e8fd356400a9c96.gif",
           },
           footer: {
-            text: "※ ベリフィケーションを行うと、Discord 外のウェブサイトが開き、hCaptcha によって保護されます。",
+            text: "※ เมื่อทำการยืนยันตัวตน เว็บไซต์ภายนอก Discord จะเปิดขึ้น และได้รับการปกป้องโดย hCaptcha",
           },
           timestamp: new Date().toISOString(),
         },
@@ -284,7 +267,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
-            .setLabel("ベリフィケーション")
+            .setLabel("ยืนยันตัวตน")
             .setStyle(ButtonStyle.Link)
             .setURL(
               `${process.env.PUBLIC_URL}/verify?c=${code.code}&m=${Buffer.from(

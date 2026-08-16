@@ -18,11 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       return false;
     }
   }, []);
-  console.log(isDark);
   return (
     <Sonner
       theme={isDark ? "dark" : "light"}
       className="toaster group"
+      richColors
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
