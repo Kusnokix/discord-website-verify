@@ -4,6 +4,7 @@ FROM oven/bun:latest AS frontend-builder
 WORKDIR /app/public
 
 COPY public/ .
+COPY ./env .env
 RUN bun install
 
 RUN --mount=type=secret,id=HCAPTCHA_SITE_KEY \

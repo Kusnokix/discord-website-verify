@@ -5,8 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 console.log("HCAPTCHA_SITE_KEY", process.env.HCAPTCHA_SITE_KEY);
-console.log(process.env)
-console.log(import.meta.env)
+
 
 export default defineConfig({
   plugins: [
@@ -18,6 +17,6 @@ export default defineConfig({
     }),
   ],
   define: {
-    HCAPTCHA_SITE_KEY: JSON.stringify(import.meta.env.VITE_HCAPTCHA_SITE_KEY || process.env.HCAPTCHA_SITE_KEY || ""),
+    HCAPTCHA_SITE_KEY: JSON.stringify(process.env.HCAPTCHA_SITE_KEY || ""),
   }
 })
