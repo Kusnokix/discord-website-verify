@@ -4,12 +4,11 @@ FROM oven/bun:latest AS frontend-builder
 WORKDIR /app/public
 
 COPY public/ .
+RUN bun install
+
 RUN --mount=type=secret,id=HCAPTCHA_SITE_KEY \
     export HCAPTCHA_SITE_KEY="$(cat /run/secrets/HCAPTCHA_SITE_KEY 2>/dev/null || true)" && \
     bun run build
-
-RUN bun install
-RUN bun run build
 
 # ---------- Stage 2: Build backend ----------
 FROM oven/bun:latest AS backend-builder
